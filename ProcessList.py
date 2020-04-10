@@ -8,7 +8,7 @@ from Process import Process
 from copy import deepcopy
 
 
-class ProcessList:
+class ProcessListAdministration:
     def __init__(self):
         self.processes = []
 
