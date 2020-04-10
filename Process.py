@@ -15,9 +15,23 @@ class Process:
         self.row = 0  # A Measure needed for lrtf, indicates how many time units the process was processed continuously.
         self.row_start_time = None  # Indicates at what time unit the current row started.
 
-    def finished(self)->bool:
+    def finished(self) -> bool:
         """A quick check if a process is finished. The remaining time indicates how many time units are left until the
         process is done. That means a process with a remaining time of 0 is considered finished."""
         if self.remaining_time <= 0:
             return True
         return False
+
+    def get_response_ratio(self, passed_time: int) -> float:
+        """Calculates and returns the response ratio."""
+        waiting_time = passed_time - self.arrival_time
+        response_ratio = (waiting_time+self.duration)/self.duration
+        return response_ratio
+
+    def process(self, time_units: int, current_time: int):
+        """This functions simulates that the process gets processed 'time_units' time units. Everything that happens
+        is, that the remaining_time gets shortend by int 'time_units'."""
+        self.remaining_time -= time_units
+
+        if self.finished():  # If it so happens that the process is finished with this step, the end time gets set.
+            self.end_time = current_time
