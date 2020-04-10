@@ -46,8 +46,6 @@ class Scheduler:
 
             self.process(possible_jobs[0])  # the first process in the list is the one to be done
 
-
-
     def shortest_job_first(self):
         """Shortest job first, if a job comes in, it'll be put in the right place, once a job started it'll be done."""
         self.reset()
@@ -56,8 +54,6 @@ class Scheduler:
             possible_jobs.sort(key=lambda x: x.duration)
 
             self.process(possible_jobs[0])  # the first process in the list is the one to be done
-
-
 
     def highest_response_ration_next(self):
         """Shortest job first, if a job comes in, it'll be put in the right place, once a job started it'll be done."""
@@ -68,7 +64,23 @@ class Scheduler:
 
             self.process(possible_jobs[0])  # the first process in the list is the one to be done
 
+    def shortest_remaining_time_first(self):
+        """The shortest job starts first, if a shorter job comes in, the shorter one will be finished first."""
+        self.reset()
+        latest_job = None
+        while not self.check_if_done():  # Check if there are still jobs not done.
+            possible_jobs = self.get_competing_processes()
+            possible_jobs.sort(key=lambda x: x.remaining_time)
 
+            shortest_job = possible_jobs[0]  # the shortest job is the first one in the list
+
+            self.process_one_step(shortest_job, latest_job)
+
+            latest_job = shortest_job
+
+        # The last process's data doesnt get added to the data table inside the functions, because this happens in the
+        # next step. And there is no next step for the last one, So it happens here:
+        self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row,)
 
     # SUPPORTING FUNCTIONS
     def get_competing_processes(self) -> List[Process]:
@@ -113,5 +125,30 @@ class Scheduler:
             start = entry[1]
             finish = entry[2]
             plotly_chart_data.append(dict(Task=name, Start=start, Finish=finish,
-                              Description=f'Task: {name} Duration: {finish-start}'))
+                                          Description=f'Task: {name} Duration: {finish-start}'))
         return plotly_chart_data
+
+    def process_one_step(self, process, latest_job):
+        """This is used for shortest and longest remaining time only (preemtives)."""
+        if process != latest_job and latest_job is not None:
+            # This is the case if the process that will be processed in this step is a different from the previous one.
+            # Then the data from the previous one need to be added to the data table.
+            self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row,)
+            latest_job.row_start_time = None
+            latest_job.row = 0  # And the previous job's row data  goes back to 0.
+
+        if process.starting_time is None:
+            # If this is the first step for the current process, the starting time is set.
+            process.starting_time = self.passed_time
+
+        if process.row_start_time is None:
+            # If this is the first step in the current row of the current process, its row starting time is set.
+            process.row_start_time = self.passed_time
+
+        # With preemtive algorithms only one step at a time is possible
+        process.row += 1  # Increase jobs row by one.
+        process.remaining_time -= 1  # The remaining time is now one time unit shorter.
+        self.passed_time += 1  # And the simulations passed time is also by one time unit increased.
+
+        if process.finished():
+            process.end_time = self.passed_time
