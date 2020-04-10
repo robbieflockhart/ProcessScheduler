@@ -30,10 +30,12 @@ class ProcessList:
         """Reads a csv file formatted as 'name, duration, arrival_time' and adds every line as a new process to the
         process list."""
         file = open(filepath, 'r')
-        for line in file[1:]:  # Skip the first row inside csv file.
+        file.readline()  # Skip the first row inside csv file.
+        for line in file:
             if not line:
                 break  # if the row is empty, the last row is reached and the for loop is done.
             line = line.split(',')  # Separate row into its 3 parts, at the comma.
             if len(line) >= 3:  # Only precede if all the arguments are available.
-                self.processes.append(Process(line[0], line[1], line[2]))  # Add as a new process to the list.
+                self.processes.append(Process(line[0], int(line[1]), int(line[2])))  # Add as a new process to the list.
+
         file.close()
