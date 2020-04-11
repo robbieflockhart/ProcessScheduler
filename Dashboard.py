@@ -1,6 +1,6 @@
 """
 A Dashboard created with python using the dash library.
-It used to visualize the outcomes of my Scheduling-Algorithm-Simulator.
+I use it to visualize the outcomes of my Scheduling-Algorithm-Simulator.
 """
 
 __author__ = "Anton Roesler"
@@ -56,7 +56,7 @@ app = dash.Dash(external_stylesheets=[BS])
 title = html.Div(
     html.H1(children="Visualization of Scheduling Algorithms", style={'fontSize': 30, 'font-family': 'Gidole'}))
 
-# A Dropdown with links to m social media.
+# A Dropdown with links to my social media.
 bar_drop = dbc.DropdownMenu(
     [
         dbc.DropdownMenuItem(
@@ -199,7 +199,7 @@ app.layout = dbc.Container(
                 dbc.Col(
                     [
                         add_process_field
-                    ],width=10
+                    ], width=10
                 ),
                 dbc.Col(
                     clear_button
@@ -281,7 +281,7 @@ def add_button_click(n, num_clicks=num_clicks):
         pass
     else:
         exists = False
-        for p in process_list.processes:  # DONT Use get_process_list -> it returns a deepcopy hahah took me a while.
+        for p in process_list.processes:  # DONT Use get_process_list -> it returns a deepcopy.
             # First we see if a process name already exists inside the list, if so: its values will get adjusted:
             if p.name == namer.get('name'):  # User inputs are stored in the namer.
                 process_list.remove(p)
@@ -359,7 +359,7 @@ def update_w_median(value):
 def update_w_median(value):
     return scheduler.stats[3]
 
-
+# SLIDER CALL BACK
 @app.callback(
     dash.dependencies.Output('slider-text', 'children'),
     [dash.dependencies.Input('slider', 'value')])

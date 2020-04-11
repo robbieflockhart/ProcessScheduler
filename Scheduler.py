@@ -87,7 +87,7 @@ class Scheduler:
 
         # The last process's data doesnt get added to the data table inside the functions, because this happens in the
         # next step. And there is no next step for the last one, So it happens here:
-        self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row)
+        self.add_data(latest_job, latest_job.row_start_time, latest_job.row)
         self.stats = self.get_stats()
 
     def round_robin(self):
@@ -115,7 +115,7 @@ class Scheduler:
             if current_job.starting_time is None:  # If this is the first step of processing for the current job...
                 current_job.starting_time = self.passed_time  # ...the starting time is set.
 
-            self.add_data(current_job.name, self.passed_time, duration)  # Add the data to the data table
+            self.add_data(current_job, self.passed_time, duration)  # Add the data to the data table
             self.passed_time += duration  # Increase the passed time
             current_job.process(duration, self.passed_time)  # Adjust the parameter inside the job itself.
             already_processed.append(current_job)  # Ad the job to the list of processed ones.
@@ -145,16 +145,16 @@ class Scheduler:
     def process(self, process: Process):
         """This function does the processing part, which is the same for fcfs, sjf, hrrn (all non-preemtives)."""
         duration = process.duration
-        self.add_data(process.name, self.passed_time, duration)
+        self.add_data(process, self.passed_time, duration)
         process.starting_time = self.passed_time
         # Since this is only used for non-preemptives algorithms the whole process will be finished
         self.passed_time += duration  # by increasing the passed time by the process's duration.
         process.process(duration, self.passed_time)  # The process itself need to be updated.
 
-    def add_data(self, name: str, start: int, duration: int):
+    def add_data(self, process: Process, start: int, duration: int):
         """Every piece that gets processed is saved as an entry in the data table."""
         finish = start+duration
-        self.data.append([name, start, finish])
+        self.data.append([process.name, start, finish, process.arrival_time])
 
     def data_plotly_formatted(self) -> List:
         """Turns the data list into a list of dicts that can be used for the plotly/dash gantt chart."""
@@ -164,7 +164,7 @@ class Scheduler:
             start = self.start + datetime.timedelta(seconds=entry[1])
             finish = self.start + datetime.timedelta(seconds=entry[2])
             plotly_chart_data.append(dict(Task=name, Start=start, Finish=finish,
-                                          Description=f'Task: {name} Duration: {finish-start}'))
+                                          Description=f'Task: {name} Duration: {finish-start} Arrival: {entry[3]}'))
         return plotly_chart_data
 
     def process_one_step(self, process, latest_job):
@@ -172,7 +172,7 @@ class Scheduler:
         if process != latest_job and latest_job is not None:
             # This is the case if the process that will be processed in this step is a different from the previous one.
             # Then the data from the previous one need to be added to the data table.
-            self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row,)
+            self.add_data(latest_job, latest_job.row_start_time, latest_job.row,)
             latest_job.row_start_time = None
             latest_job.row = 0  # And the previous job's row data  goes back to 0.
 
@@ -196,7 +196,6 @@ class Scheduler:
         """Returns an Array with the Stats: [waiting time mean, waiting median, turnaround mean ...]"""
         waiting_times = [x.get_waiting_time() for x in self.process_list]
         turnaround_times = [x.get_turnaround_time() for x in self.process_list]
-        print(waiting_times)
         return [
             np.mean(waiting_times),
             np.median(waiting_times),
