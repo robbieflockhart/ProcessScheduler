@@ -56,8 +56,39 @@ app = dash.Dash(external_stylesheets=[BS])
 title = html.Div(
     html.H1(children="Visualization of Scheduling Algorithms", style={'fontSize': 30, 'font-family': 'Gidole'}))
 
-navbar = dbc.NavbarSimple(children=[title],fluid=True,sticky='top')
+# A Dropdown with links to m social media.
+bar_drop = dbc.DropdownMenu(
+    [
+        dbc.DropdownMenuItem(
+                    "See the Code", href="https://github.com/antonroesler/ProcessScheduler"
+        ),
+        dbc.DropdownMenuItem(
+                    "My Linked-in", href="https://www.linkedin.com/in/antonroesler/"
+        ),
+    ],
+    label='More',
+    style={'padding': 20}
+)
+# The Navbar is the header with title and links to my github and linked-in.
+navbar = dbc.NavbarSimple(children=[
+    dbc.Row(
+        [
+        dbc.Col(
+            [
+                title
+            ], align='start'
 
+        ),
+        dbc.Col(
+            [
+                bar_drop
+            ], align='end'
+        )
+        ]
+    )
+    ],)
+
+# The Dropdown Menu to choose an algorithm.
 dropdown = dcc.Dropdown(
     id='demo-dropdown',
     options=[
@@ -74,8 +105,9 @@ dropdown = dcc.Dropdown(
 
 )
 
-chart = html.Div(id='chart')
+chart = html.Div(id='chart')  # This is the chart object!
 
+# An Input field to let the user add his own processes
 add_process_field = dbc.InputGroup(
     [
         dbc.InputGroupAddon(dbc.Button("Add", id="add-button", color="success"),
@@ -84,8 +116,9 @@ add_process_field = dbc.InputGroup(
         dbc.Input(placeholder="Duration", type="number", id="duration-input"),
         dbc.Input(placeholder="Arrival Time", type="number", id="arrival-input"),
     ],
-    style={'padding': 15}
 )
+# A Button to clear the process list
+clear_button = dbc.Button("Clear", id='clear-button', color='warning')
 
 app.layout = dbc.Container(
     [
@@ -106,9 +139,15 @@ app.layout = dbc.Container(
             )
         ),
         dbc.Row(
-            dbc.Col(
-                add_process_field
-            )
+            [
+                dbc.Col(
+                    add_process_field,
+                    width=10
+                ),
+                dbc.Col(
+                    clear_button
+                )
+            ],
 
         )
     ]
@@ -116,8 +155,8 @@ app.layout = dbc.Container(
 
 @app.callback(
     Output('chart', 'children'),
-    [Input('demo-dropdown', 'value'), Input("add-button", "n_clicks")])
-def update_output(value, x):
+    [Input('demo-dropdown', 'value'), Input("add-button", "n_clicks"), Input("clear-button", "n_clicks")])
+def update_output(value, x, y):
     """This is to updated the main gantt chart if the user changes the value of the dropdown menu."""
     if value == 1:  # For the clicked value the Algorithm will be executed.
         title = algorithm_titles[1]
@@ -150,7 +189,7 @@ def update_output(value, x):
     Output("add-button", None),
     [Input("add-button", "n_clicks")]
 )
-def on_button_click(n, num_clicks=num_clicks):
+def add_button_click(n, num_clicks=num_clicks):
     """This is the call back function for the Add button. What it does, is take the values from the fields, which are
     stored in the variables by their own call backs. And if everything needed is there, a new Process will be created
     inside the process list with te input given by the user."""
@@ -174,7 +213,8 @@ def on_button_click(n, num_clicks=num_clicks):
             process_list.add(namer.get('name'), namer.get('duration'), namer.get('arrival'))
 
 
-
+# CALLBACKS FOR THE USER INPUTS
+# User inputs will be saved in the Namer!
 @app.callback(
     Output("name-input", None),
     [Input("name-input", "value")]
@@ -187,7 +227,7 @@ def update_name(value):
     Output("duration-input", None),
     [Input("duration-input", "value")]
 )
-def update_name(value):
+def update_duration(value):
     namer.set('duration', value)
 
 
@@ -195,8 +235,17 @@ def update_name(value):
     Output("arrival-input", None),
     [Input("arrival-input", "value")]
 )
-def update_name(value):
+def update_arrival(value):
     namer.set('arrival', value)
+
+
+@app.callback(
+    Output("clear-button", None),
+    [Input("clear-button", "n_clicks")]
+)
+def clear_processlist(n):
+    if n:
+        process_list.clear()
 
 
 if __name__ == '__main__':

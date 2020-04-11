@@ -24,6 +24,10 @@ class ProcessListAdministration:
         """Removes a given process."""
         self.processes.remove(process)
 
+    def clear(self):
+        """Empties the process list"""
+        self.processes = []
+
     def get_process_list(self):
         """Returns a deepcopy of the process list."""
         if len(self.processes) == 0:
