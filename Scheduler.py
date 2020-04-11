@@ -26,6 +26,7 @@ class Scheduler:
         # The start time is considered 0.
         self.start = datetime.datetime.fromisoformat("2020-01-01 00:00:00")  # other option: datetime.datetime.now()
 
+    # GENERAL FUNCTIONS
     def reset(self):
         self.passed_time = 0
         self.data = []
@@ -36,53 +37,55 @@ class Scheduler:
         self.process_list = self.process_list_admin.get_process_list()
 
     #  SCHEDULING ALGORITHMS
-    def first_come_first_served(self):
-        """In the order they come in. Ones a job started, it will be finished."""
+    def non_preemtive_algorithms(self, sjf=False, hrrn=False):
+        """
+        This is the Algorithm for:
+         - First Come First Served
+         - Shortest Job First
+         - Highest Response Ratio Next
+        The Default is set FCFS. SJF or HRRN can be used by setting the sjf or hrrn argument to True.
+        """
         self.reset()
         while not self.check_if_done():  # check if there are still unfinished processes inside the process list.
 
             possible_jobs = self.get_competing_processes()  # All process that are competing to be processed.
-            possible_jobs.sort(key=lambda x: x.arrival_time)  # jobs get sorted after come in time.
+            if sjf:  # If the user wants to use SJF:
+                possible_jobs.sort(key=lambda x: x.remaining_time)  # Jobs get sorted by remaining time.
+            elif hrrn:  # If the user wants to use HRRN:
+                possible_jobs.sort(key=lambda x: x.get_response_ratio())  # Jobs get sorted by response ratio.
+            else:  # Default is FCFS:
+                possible_jobs.sort(key=lambda x: x.arrival_time)  # Jobs get sorted by arrival time.
 
-            self.process(possible_jobs[0])  # the first process in the list is the one to be done
+            self.process(possible_jobs[0])  # The first process in the list is the one to be done.
 
-    def shortest_job_first(self):
-        """Shortest job first, if a job comes in, it'll be put in the right place, once a job started it'll be done."""
+    def remaining_time_first(self, longest=False):
+        """
+        This can either be Longest or Shortest remaining time first. The default is Shortest, by setting longest to true
+        it will switch to the Scheduling Algorithm Longest remaining time first.
+        The longest/shortest job starts first, if a longer/shorter job comes in, the longer/shorter one will be finished
+        first.
+         """
         self.reset()
-        while not self.check_if_done():  # check if there are still jobs not done
-            possible_jobs = self.get_competing_processes()
-            possible_jobs.sort(key=lambda x: x.duration)
-
-            self.process(possible_jobs[0])  # the first process in the list is the one to be done
-
-    def highest_response_ration_next(self):
-        """Shortest job first, if a job comes in, it'll be put in the right place, once a job started it'll be done."""
-        self.reset()
-        while not self.check_if_done():  # check if there are still jobs not done
-            possible_jobs = self.get_competing_processes()
-            possible_jobs.sort(key=lambda x: x.get_response_ratio())
-
-            self.process(possible_jobs[0])  # the first process in the list is the one to be done
-
-    def shortest_remaining_time_first(self):
-        """The shortest job starts first, if a shorter job comes in, the shorter one will be finished first."""
-        self.reset()
-        latest_job = None
+        latest_job = None  # The latest job is always the job that was processed in the last step - at beginning: None.
         while not self.check_if_done():  # Check if there are still jobs not done.
-            possible_jobs = self.get_competing_processes()
-            possible_jobs.sort(key=lambda x: x.remaining_time)
+            possible_jobs = self.get_competing_processes()  # get the list of competing jobs at this time point.
 
-            shortest_job = possible_jobs[0]  # the shortest job is the first one in the list
+            # Default is longest=False - if longest=True, the list will be sorted reverse!
+            possible_jobs.sort(key=lambda x: x.remaining_time, reverse=longest)
+            # Reverse means descending - so the longest remaining time will be at the first position in list.
+            # The jobs with the shortest/longest remaining time left, is the first one in list.
+            current_job = possible_jobs[0]
 
-            self.process_one_step(shortest_job, latest_job)
+            self.process_one_step(current_job, latest_job)  # The job is processed here.
 
-            latest_job = shortest_job
+            latest_job = current_job  # Now the job that was just processed is the (new) latest job.
 
         # The last process's data doesnt get added to the data table inside the functions, because this happens in the
         # next step. And there is no next step for the last one, So it happens here:
-        self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row,)
+        self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row)
 
-    # SUPPORTING FUNCTIONS
+
+    # SCHEDULING ALGORITHM SUPPORTING FUNCTIONS
     def get_competing_processes(self) -> List[Process]:
         """Returns a list of all jobs that already exist at this time (passed_time) and are not already finished."""
         competing_processes: List[Process] = []
