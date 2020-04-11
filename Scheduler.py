@@ -10,6 +10,7 @@ for the gantt chart. It can be changed to milliseconds, minutes or whatever in l
 __author__ = "Anton Roesler"
 __email__ = "anton.roesler@stud.fra-uas.de"
 
+import numpy as np
 from ProcessList import ProcessListAdministration
 from Process import Process
 from typing import List
@@ -20,8 +21,10 @@ class Scheduler:
     def __init__(self, process_list_admin: ProcessListAdministration):
         self.process_list_admin = process_list_admin
         self.process_list: List[Process] = None
-        self.passed_time = 0  # Number of time units passed since the start time, only integer values.
+        self.passed_time = 0  # Number of time units passed since the simulation's start, only integer values.
         self.data = []  # Data for the diagram
+        self.stats = []
+        self.quantum = 3  # Quantum is the length of the time slice for the Round Robin scheduling.
 
         # The start time is considered 0.
         self.start = datetime.datetime.fromisoformat("2020-01-01 00:00:00")  # other option: datetime.datetime.now()
@@ -52,11 +55,13 @@ class Scheduler:
             if sjf:  # If the user wants to use SJF:
                 possible_jobs.sort(key=lambda x: x.remaining_time)  # Jobs get sorted by remaining time.
             elif hrrn:  # If the user wants to use HRRN:
-                possible_jobs.sort(key=lambda x: x.get_response_ratio(passed_time=self.passed_time))  # Jobs get sorted by response ratio.
+                # Jobs get sorted by response ratio:
+                possible_jobs.sort(key=lambda x: x.get_response_ratio(passed_time=self.passed_time))
             else:  # Default is FCFS:
                 possible_jobs.sort(key=lambda x: x.arrival_time)  # Jobs get sorted by arrival time.
 
             self.process(possible_jobs[0])  # The first process in the list is the one to be done.
+        self.stats = self.get_stats()
 
     def remaining_time_first(self, longest=False):
         """
@@ -83,11 +88,11 @@ class Scheduler:
         # The last process's data doesnt get added to the data table inside the functions, because this happens in the
         # next step. And there is no next step for the last one, So it happens here:
         self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row)
+        self.stats = self.get_stats()
 
     def round_robin(self):
         """Round Robin Scheduling Algorithm"""
         self.reset()
-        quantum = 3  # The length of the time slice for every job ToDo: this should be adjustable by the user.
         already_processed = []
         while not self.check_if_done():  # Check if there are still jobs not done.
             possible_jobs = self.get_competing_processes()  # Get the list of competing jobs at this time point.
@@ -103,14 +108,18 @@ class Scheduler:
                 current_job = possible_jobs[0]
                 already_processed = []  # Empty the list to start over again.
 
-            duration = quantum  # If time gets changed, quantum should stay the same for next iteration.
+            duration = self.quantum  # If duration gets changed, quantum should stay the same for next iteration.
             if current_job.remaining_time < duration:  # If the jobs remaining time is less than the quantum
                 duration = current_job.remaining_time  # the time slice for the processing gets shortened to that time.
+
+            if current_job.starting_time is None:  # If this is the first step of processing for the current job...
+                current_job.starting_time = self.passed_time  # ...the starting time is set.
 
             self.add_data(current_job.name, self.passed_time, duration)  # Add the data to the data table
             self.passed_time += duration  # Increase the passed time
             current_job.process(duration, self.passed_time)  # Adjust the parameter inside the job itself.
             already_processed.append(current_job)  # Ad the job to the list of processed ones.
+        self.stats = self.get_stats()
 
     # SCHEDULING ALGORITHM SUPPORTING FUNCTIONS
     def get_competing_processes(self) -> List[Process]:
@@ -183,6 +192,21 @@ class Scheduler:
         if process.finished():
             process.end_time = self.passed_time
 
+    def get_stats(self):
+        """Returns an Array with the Stats: [waiting time mean, waiting median, turnaround mean ...]"""
+        waiting_times = [x.get_waiting_time() for x in self.process_list]
+        turnaround_times = [x.get_turnaround_time() for x in self.process_list]
+        print(waiting_times)
+        return [
+            np.mean(waiting_times),
+            np.median(waiting_times),
+            np.mean(turnaround_times),
+            np.median(turnaround_times)
+        ]
+    def info(self):
+        for p in self.process_list:
+            p.info()
+
     # Create Colors for Gantt Chart
     def get_colors(self):
         self.update_process_list()
@@ -205,3 +229,6 @@ class Scheduler:
             color_dict[process.name] = colors[i % len(colors)]
             i += 1
         return color_dict
+
+    def set_quantum(self, value: int):
+        self.quantum = value

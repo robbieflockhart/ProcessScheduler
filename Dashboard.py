@@ -117,8 +117,63 @@ add_process_field = dbc.InputGroup(
         dbc.Input(placeholder="Arrival Time", type="number", id="arrival-input"),
     ],
 )
+
+add_text = html.Div("Here you can add or modify as many processes as you want:", style={'padding': 20})
+
 # A Button to clear the process list
 clear_button = dbc.Button("Clear", id='clear-button', color='warning')
+
+# The Card Shows Statistical information
+stat_card = dbc.Card(
+    [
+        dbc.CardHeader(
+            html.H4("STATS")
+        ),
+        dbc.CardBody(
+            [
+                dbc.Table(
+                    html.Tbody(
+                        [
+                            html.Tr([html.Td("Waiting Mean"), html.Td(12, id='w-mean')]),
+                            html.Tr([html.Td("Turnaround Mean"), html.Td(13, id='t-mean')]),
+                            html.Tr([html.Td("Waiting Median"), html.Td(140, id='w-median')]),
+                            html.Tr([html.Td("Turnaround Median"), html.Td(111, id='t-median')])
+                        ]
+                    )
+                )
+            ]
+        )
+    ],
+)
+
+# Slider to adjust the quantum of Round Robin algorithm
+slider = dcc.Slider(
+    id='slider',
+    min=1,
+    max=20,
+    step=1,
+    value=3
+)
+
+slider_card = dbc.Card(
+    [
+        dbc.CardHeader(
+            html.H4("Round Robin Quantum")
+        ),
+        dbc.CardBody(
+            [
+                html.Div("Here you can adjust the length of the quantum or time slice that is used fot the Round"
+                         " Robin scheduling."),
+                slider,
+                html.Div(id='slider-text')
+            ]
+        )
+    ]
+)
+
+# ToDo The Compare Button opens a Modal where one can see a bar chart with all the stats compared
+compare = dbc.Button("Compare Algorithms", id='compare', color='info', block=True)
+
 
 app.layout = dbc.Container(
     [
@@ -138,25 +193,48 @@ app.layout = dbc.Container(
                 chart
             )
         ),
+        dbc.Row(add_text),
         dbc.Row(
             [
                 dbc.Col(
-                    add_process_field,
-                    width=10
+                    [
+                        add_process_field
+                    ],width=10
                 ),
                 dbc.Col(
                     clear_button
                 )
-            ],
+            ], style={'padding': 30}
 
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        stat_card,
+
+                    ],
+                    width=6,
+
+                ),
+                dbc.Col(
+                    [
+                        dbc.Row(slider_card),
+                        dbc.Row(compare, style={'padding': 20})
+
+                    ]
+                )
+            ],
+            justify='center'
         )
-    ]
+    ], style={'padding': 20}
 )
 
 @app.callback(
     Output('chart', 'children'),
-    [Input('demo-dropdown', 'value'), Input("add-button", "n_clicks"), Input("clear-button", "n_clicks")])
-def update_output(value, x, y):
+    [Input('demo-dropdown', 'value'), Input("add-button", "n_clicks"),
+     Input("clear-button", "n_clicks"), Input('slider-text', 'children')])
+def update_output(value, x, y, z):
     """This is to updated the main gantt chart if the user changes the value of the dropdown menu."""
     if value == 1:  # For the clicked value the Algorithm will be executed.
         title = algorithm_titles[1]
@@ -182,6 +260,8 @@ def update_output(value, x, y):
                           colors=scheduler.get_colors(), index_col='Task', show_colorbar=True)
     fig.layout.xaxis.tickformat = "%Mm %Ss"  # Show minutes and Seconds as '00m 00s'
     graph = dcc.Graph(id="graph", figure=fig)  # Create the graph.
+
+
     return graph
 
 # CALLBACKS FOR THE ADD-A-NEW-PROCESS INPUT FIELD GROUP
@@ -198,7 +278,6 @@ def add_button_click(n, num_clicks=num_clicks):
     if n-num_clicks is 0:
         pass
     elif namer.get('name') is None or namer.get('duration') is None or namer.get('arrival') is None:
-        print("hi")
         pass
     else:
         exists = False
@@ -246,6 +325,47 @@ def update_arrival(value):
 def clear_processlist(n):
     if n:
         process_list.clear()
+
+
+# CALL BACKS FOR THE INFO STATS
+@app.callback(
+    Output("w-mean", "children"),
+    [Input('chart', 'children')]
+)
+def updated_w_mean(value):
+    return scheduler.stats[0]
+
+
+@app.callback(
+    Output("t-mean", "children"),
+    [Input('chart', 'children')]
+)
+def update_t_mean(value):
+    return scheduler.stats[2]
+
+
+@app.callback(
+    Output("w-median", "children"),
+    [Input('chart', 'children')]
+)
+def update_w_median(value):
+    return scheduler.stats[1]
+
+
+@app.callback(
+    Output("t-median", "children"),
+    [Input('chart', 'children')]
+)
+def update_w_median(value):
+    return scheduler.stats[3]
+
+
+@app.callback(
+    dash.dependencies.Output('slider-text', 'children'),
+    [dash.dependencies.Input('slider', 'value')])
+def update_slider(value):
+    scheduler.set_quantum(value)
+    return f"Value: {value}"
 
 
 if __name__ == '__main__':

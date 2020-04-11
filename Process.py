@@ -33,5 +33,17 @@ class Process:
         is, that the remaining_time gets shortend by int 'time_units'."""
         self.remaining_time -= time_units
 
-        if self.finished():  # If it so happens that the process is finished with this step, the end time gets set.
+        if self.remaining_time <= 0:  # If the process is finished with this step, the end time gets set.
             self.end_time = current_time
+
+    def get_waiting_time(self):
+        """The total waiting time is the total turnaround time minus the duration."""
+        return self.end_time - self.arrival_time - self.duration
+
+    def get_turnaround_time(self):
+        """The total turnaround time is the end time minus the start time."""
+        return self.end_time - self.arrival_time
+
+    def info(self):
+        print(f'{self}\n{self.name}\nstart: {self.starting_time}\nend: {self.end_time}\nrem: {self.remaining_time}'
+              f'\ndur: {self.duration}\nwait:{self.get_waiting_time()} ')
