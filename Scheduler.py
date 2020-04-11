@@ -52,7 +52,7 @@ class Scheduler:
             if sjf:  # If the user wants to use SJF:
                 possible_jobs.sort(key=lambda x: x.remaining_time)  # Jobs get sorted by remaining time.
             elif hrrn:  # If the user wants to use HRRN:
-                possible_jobs.sort(key=lambda x: x.get_response_ratio())  # Jobs get sorted by response ratio.
+                possible_jobs.sort(key=lambda x: x.get_response_ratio(passed_time=self.passed_time))  # Jobs get sorted by response ratio.
             else:  # Default is FCFS:
                 possible_jobs.sort(key=lambda x: x.arrival_time)  # Jobs get sorted by arrival time.
 
@@ -152,8 +152,8 @@ class Scheduler:
         plotly_chart_data = []
         for entry in self.data:
             name = entry[0]
-            start = entry[1]
-            finish = entry[2]
+            start = self.start + datetime.timedelta(seconds=entry[1])
+            finish = self.start + datetime.timedelta(seconds=entry[2])
             plotly_chart_data.append(dict(Task=name, Start=start, Finish=finish,
                                           Description=f'Task: {name} Duration: {finish-start}'))
         return plotly_chart_data
@@ -182,3 +182,26 @@ class Scheduler:
 
         if process.finished():
             process.end_time = self.passed_time
+
+    # Create Colors for Gantt Chart
+    def get_colors(self):
+        self.update_process_list()
+        colors = [
+            'rgb(181, 18, 80)',
+            'rgb(219, 202, 13)',
+            'rgb(23, 18, 181)',
+            'rgb(62, 161, 16)',
+            'rgb(150, 35, 35)',
+            'rgb(18, 127, 181)',
+            'rgb(227, 112, 18)',
+            'rgb(110, 18, 181)',
+            'rgb(33, 219, 185)',
+            'rgb(181, 18, 170)',
+            'rgb(33, 219, 92)'
+        ]
+        color_dict = {}
+        i = 0
+        for process in self.process_list:
+            color_dict[process.name] = colors[i % len(colors)]
+            i += 1
+        return color_dict

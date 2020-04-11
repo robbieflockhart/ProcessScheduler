@@ -20,6 +20,10 @@ class ProcessListAdministration:
         """Adds a given process to the process list"""
         self.processes.append(process)
 
+    def remove(self, process: Process):
+        """Removes a given process."""
+        self.processes.remove(process)
+
     def get_process_list(self):
         """Returns a deepcopy of the process list."""
         if len(self.processes) == 0:
