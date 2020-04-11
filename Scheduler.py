@@ -84,6 +84,33 @@ class Scheduler:
         # next step. And there is no next step for the last one, So it happens here:
         self.add_data(latest_job.name, latest_job.row_start_time, latest_job.row)
 
+    def round_robin(self):
+        """Round Robin Scheduling Algorithm"""
+        self.reset()
+        quantum = 3  # The length of the time slice for every job ToDo: this should be adjustable by the user.
+        already_processed = []
+        while not self.check_if_done():  # Check if there are still jobs not done.
+            possible_jobs = self.get_competing_processes()  # Get the list of competing jobs at this time point.
+            possible_jobs.sort(key=lambda x: x.arrival_time)  # Sort by arrival time.
+            current_job = None
+            for i in range(len(possible_jobs)):       # Check for every possible job
+                current_job = possible_jobs[i]
+                if current_job in already_processed:  # if this jobs was already processed
+                    current_job = None  # if it was, current jib is set back to none.
+                else:  # if it wasn't then break out of loop an continue with this job as the current one.
+                    break
+            if not current_job:  # If every possible job was already processed then start with the beginning and reset:
+                current_job = possible_jobs[0]
+                already_processed = []  # Empty the list to start over again.
+
+            duration = quantum  # If time gets changed, quantum should stay the same for next iteration.
+            if current_job.remaining_time < duration:  # If the jobs remaining time is less than the quantum
+                duration = current_job.remaining_time  # the time slice for the processing gets shortened to that time.
+
+            self.add_data(current_job.name, self.passed_time, duration)  # Add the data to the data table
+            self.passed_time += duration  # Increase the passed time
+            current_job.process(duration, self.passed_time)  # Adjust the parameter inside the job itself.
+            already_processed.append(current_job)  # Ad the job to the list of processed ones.
 
     # SCHEDULING ALGORITHM SUPPORTING FUNCTIONS
     def get_competing_processes(self) -> List[Process]:
