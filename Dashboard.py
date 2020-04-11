@@ -19,7 +19,14 @@ from ProcessList import ProcessListAdministration
 
 # VARIABLES
 filename = 'processes.csv'  # the filename or path to the csv file with the processes on it
-
+algorithm_titles = [
+    "Frist Come First Served",
+    "Shortest Job First",
+    "Highest Response Ratio Next",
+    "Shortest Remaining Time First",
+    "Longest Remaining Time First",
+    "Round Robin"
+]
 # SIMULATOR
 process_list = ProcessListAdministration()
 process_list.read_csv(filename)
@@ -34,12 +41,12 @@ title = html.Div(
 dropdown = dcc.Dropdown(
     id='demo-dropdown',
     options=[
-        {'label': 'First come first served', 'value': 1},
-        {'label': 'Shortest Job first', 'value': 2},
-        {'label': 'Highest response ratio next', 'value': 3},
-        {'label': 'Shortest remaining time first', 'value': 4},
-        {'label': 'Longest remaining time first', 'value': 5},
-        {'label': 'Round Robin', 'value': 6}
+        {'label': algorithm_titles[0], 'value': 0},
+        {'label': algorithm_titles[1], 'value': 1},
+        {'label': algorithm_titles[2], 'value': 2},
+        {'label': algorithm_titles[3], 'value': 3},
+        {'label': algorithm_titles[4], 'value': 4},
+        {'label': algorithm_titles[5], 'value': 5}
     ],
     style={'fontSize': 19, 'font-family': 'Gidole'},
     searchable=False,
@@ -68,11 +75,23 @@ app.layout = html.Div(
     [dash.dependencies.Input('demo-dropdown', 'value')])
 def update_output(value):
     """This is to updated the main gantt chart if the user changes the value of the dropdown menu."""
-    if value == 2:
-        title = "Shortest Job First"
+    if value == 1:
+        title = algorithm_titles[1]
         scheduler.non_preemtive_algorithms(sjf=True)
+    elif value == 2:
+        title = algorithm_titles[2]
+        scheduler.non_preemtive_algorithms(hrrn=True)
+    elif value == 3:
+        title = algorithm_titles[3]
+        scheduler.remaining_time_first()
+    elif value == 4:
+        title = algorithm_titles[4]
+        scheduler.remaining_time_first(longest=True)
+    elif value == 5:
+        title = algorithm_titles[5]
+        scheduler.round_robin()
     else:
-        title = "First Come First Served"
+        title = algorithm_titles[0]
         scheduler.non_preemtive_algorithms()
     data = scheduler.data_plotly_formatted()
     data = sorted(data, key=lambda i: i['Task'])
