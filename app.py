@@ -31,7 +31,7 @@ num_clicks = 0
 quantum = 3  # Used for the Round Robin Algortihm
 
 
-class Namer():
+class Namer:
     """A class to store variables and their values in (in for of a dict. I used it for storing user inputs."""
     def __init__(self):
         self.names = dict()
