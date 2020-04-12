@@ -20,7 +20,7 @@ from ProcessList import ProcessListAdministration
 # VARIABLES
 filename = 'processes.csv'  # the filename or path to the csv file with the processes on it
 algorithm_titles = [
-    "Frist Come First Served",
+    "First Come First Served",
     "Shortest Job First",
     "Highest Response Ratio Next",
     "Shortest Remaining Time First",
@@ -171,8 +171,46 @@ slider_card = dbc.Card(
     ]
 )
 
-# ToDo The Compare Button opens a Modal where one can see a bar chart with all the stats compared
+# The Compare Button opens a Modal where one can see a bar chart with all the stats compared
 compare = dbc.Button("Compare Algorithms", id='compare', color='info', block=True)
+
+# The Compare Modal shows a bar chart to compare the stats of all of the Algorithms
+
+def get_comparison():
+    """Returns Data to compare all the stats of the algorithm. By running every Algorithm in a separate Scheduler."""
+    c_scheduler = Scheduler(process_list)  # A new separate Scheduler to run the comparison in.
+    stat_names = [  # Names of the Stats for the x-axis.
+        "Waiting Time Mean",
+        "Waiting Time Median",
+        "Turnaround Time Mean",
+        "Turnaround Time Median",
+        ]
+    stats = c_scheduler.run_all()  # Get the stats.
+    fig = go.Figure()  # Create a figure
+    fig.add_trace(go.Bar(x=stat_names, y=stats['fcfs'], name="First Come First Served"))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['sjf'], name="Shortest Job First"))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['hrrn'], name="Highest Response Ratio Next"))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['srtf'], name="Shortest Remaining Time First"))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['lrtf'], name="Longest Remaining Time First"))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['rr'], name="Round Robin"))
+    return fig
+
+
+compare_modal = dbc.Modal(  # A modal that shows a bar chart to compare the Algorithms.
+    [
+        dbc.ModalHeader("COMPARE"),
+        dbc.ModalBody(
+            [
+                dcc.Graph(id="bar-chart", figure=get_comparison())
+            ]
+        ),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="compare-close", className="ml-auto")
+        )
+    ],
+    id='compare-modal',
+    size='xl'
+)
 
 
 app.layout = dbc.Container(
@@ -226,9 +264,11 @@ app.layout = dbc.Container(
                 )
             ],
             justify='center'
-        )
+        ),
+        compare_modal
     ], style={'padding': 20}
 )
+
 
 @app.callback(
     Output('chart', 'children'),
@@ -237,32 +277,32 @@ app.layout = dbc.Container(
 def update_output(value, x, y, z):
     """This is to updated the main gantt chart if the user changes the value of the dropdown menu."""
     if value == 1:  # For the clicked value the Algorithm will be executed.
-        title = algorithm_titles[1]
+        a_title = algorithm_titles[1]
         scheduler.non_preemtive_algorithms(sjf=True)
     elif value == 2:
-        title = algorithm_titles[2]
+        a_title = algorithm_titles[2]
         scheduler.non_preemtive_algorithms(hrrn=True)
     elif value == 3:
-        title = algorithm_titles[3]
+        a_title = algorithm_titles[3]
         scheduler.remaining_time_first()
     elif value == 4:
-        title = algorithm_titles[4]
+        a_title = algorithm_titles[4]
         scheduler.remaining_time_first(longest=True)
     elif value == 5:
-        title = algorithm_titles[5]
+        a_title = algorithm_titles[5]
         scheduler.round_robin()
     else:
-        title = algorithm_titles[0]
+        a_title = algorithm_titles[0]
         scheduler.non_preemtive_algorithms()
     data = scheduler.data_plotly_formatted()  # The data is what was simulated by the Scheduler.
     data = sorted(data, key=lambda i: i['Task'])
-    fig = ff.create_gantt(data, group_tasks=True, showgrid_x=True, title=title + " visualized:",
+    fig = ff.create_gantt(data, group_tasks=True, showgrid_x=True, title=a_title + " visualized:",
                           colors=scheduler.get_colors(), index_col='Task', show_colorbar=True)
     fig.layout.xaxis.tickformat = "%Mm %Ss"  # Show minutes and Seconds as '00m 00s'
     graph = dcc.Graph(id="graph", figure=fig)  # Create the graph.
 
-
     return graph
+
 
 # CALLBACKS FOR THE ADD-A-NEW-PROCESS INPUT FIELD GROUP
 @app.callback(
@@ -359,13 +399,32 @@ def update_w_median(value):
 def update_w_median(value):
     return scheduler.stats[3]
 
+
 # SLIDER CALL BACK
 @app.callback(
-    dash.dependencies.Output('slider-text', 'children'),
-    [dash.dependencies.Input('slider', 'value')])
+    Output('slider-text', 'children'),
+    [Input('slider', 'value')])
 def update_slider(value):
     scheduler.set_quantum(value)
     return f"Value: {value}"
+
+
+# COMPARE CALL BACK
+@app.callback(
+    Output('compare-modal', 'is_open'),
+    [Input('compare', 'n_clicks'), Input('compare-close', 'n_clicks')],
+    [State('compare-modal', 'is_open')])
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+
+@app.callback(
+    Output('bar-chart', 'figure'),  # Update the Bar Chart Figure.
+    [Input('compare', 'n_clicks')])
+def update_modal(is_open):
+    return get_comparison()
 
 
 if __name__ == '__main__':

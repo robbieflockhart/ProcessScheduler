@@ -202,6 +202,27 @@ class Scheduler:
             np.mean(turnaround_times),
             np.median(turnaround_times)
         ]
+
+
+    def run_all(self):
+        """Runs every algorithms and returns the stats in a dict for everyone of them."""
+        stats = {}
+        self.non_preemtive_algorithms()
+        stats["fcfs"] = self.get_stats()
+        self.non_preemtive_algorithms(sjf=True)
+        stats["sjf"] = self.get_stats()
+        self.non_preemtive_algorithms(hrrn=True)
+        stats["hrrn"] = self.get_stats()
+        self.remaining_time_first()
+        stats["srtf"] = self.get_stats()
+        self.remaining_time_first(longest=True)
+        stats["lrtf"] = self.get_stats()
+        self.round_robin()
+        stats["rr"] = self.get_stats()
+        return stats
+
+
+
     def info(self):
         for p in self.process_list:
             p.info()
