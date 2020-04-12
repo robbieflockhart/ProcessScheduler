@@ -28,6 +28,8 @@ algorithm_titles = [
     "Round Robin"
 ]
 num_clicks = 0
+quantum = 3  # Used for the Round Robin Algortihm
+
 
 class Namer():
     """A class to store variables and their values in (in for of a dict. I used it for storing user inputs."""
@@ -41,6 +43,7 @@ class Namer():
     def get(self, name):
         """Outputs a value to a given key. Or None if there is no key with that name."""
         return self.names.get(name)
+
 
 namer = Namer()
 
@@ -73,17 +76,17 @@ bar_drop = dbc.DropdownMenu(
 navbar = dbc.NavbarSimple(children=[
     dbc.Row(
         [
-        dbc.Col(
-            [
-                title
-            ], align='start'
+            dbc.Col(
+                [
+                    title
+                ], align='start'
 
-        ),
-        dbc.Col(
-            [
-                bar_drop
-            ], align='end'
-        )
+            ),
+            dbc.Col(
+                [
+                    bar_drop
+                ], align='end'
+            )
         ]
     )
     ],)
@@ -174,8 +177,10 @@ slider_card = dbc.Card(
 # The Compare Button opens a Modal where one can see a bar chart with all the stats compared
 compare = dbc.Button("Compare Algorithms", id='compare', color='info', block=True)
 
-# The Compare Modal shows a bar chart to compare the stats of all of the Algorithms
+namer.set("quantum", 3)  # Default value of the quantum is 3. Changes as the slider changes.
 
+
+# The Compare Modal shows a bar chart to compare the stats of all of the Algorithms
 def get_comparison():
     """Returns Data to compare all the stats of the algorithm. By running every Algorithm in a separate Scheduler."""
     c_scheduler = Scheduler(process_list)  # A new separate Scheduler to run the comparison in.
@@ -185,6 +190,7 @@ def get_comparison():
         "Turnaround Time Mean",
         "Turnaround Time Median",
         ]
+    c_scheduler.set_quantum(namer.get("quantum"))  # Set quantum for Round Robin to right value before run simulation.
     stats = c_scheduler.run_all()  # Get the stats.
     fig = go.Figure()  # Create a figure
     fig.add_trace(go.Bar(x=stat_names, y=stats['fcfs'], name="First Come First Served"))
@@ -198,7 +204,7 @@ def get_comparison():
 
 compare_modal = dbc.Modal(  # A modal that shows a bar chart to compare the Algorithms.
     [
-        dbc.ModalHeader("COMPARE"),
+        dbc.ModalHeader("COMPARE HOW GOOD THE DIFFERENT ALGORITHMS ARE"),
         dbc.ModalBody(
             [
                 dcc.Graph(id="bar-chart", figure=get_comparison())
@@ -405,6 +411,7 @@ def update_w_median(value):
     Output('slider-text', 'children'),
     [Input('slider', 'value')])
 def update_slider(value):
+    namer.set("quantum", value)
     scheduler.set_quantum(value)
     return f"Value: {value}"
 
