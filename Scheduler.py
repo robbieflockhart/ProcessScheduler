@@ -14,7 +14,6 @@ import numpy as np
 from ProcessList import ProcessListAdministration
 from Process import Process
 from typing import List
-import datetime
 
 
 class Scheduler:
@@ -27,7 +26,7 @@ class Scheduler:
         self.quantum = 3  # Quantum is the length of the time slice for the Round Robin scheduling.
 
         # The start time is considered 0.
-        self.start = datetime.datetime.fromisoformat("2020-01-01 00:00:00")  # other option: datetime.datetime.now()
+        self.start = 0  # other option: datetime.datetime.now()
 
     # GENERAL FUNCTIONS
     def reset(self):
@@ -156,15 +155,28 @@ class Scheduler:
         finish = start+duration
         self.data.append([process.name, start, finish, process.arrival_time])
 
+    def time_formatter(self, time_units: int):
+        secs = str(time_units % 60)
+        mins = str(int(time_units / 60))
+        if len(mins) == 1:
+            mins = f'0{mins}'
+        if len(secs) == 1:
+            secs = f'0{secs}'
+        time = f'2020-01-01 00:{mins}:{secs}'
+        return time
+
     def data_plotly_formatted(self) -> List:
         """Turns the data list into a list of dicts that can be used for the plotly/dash gantt chart."""
         plotly_chart_data = []
         for entry in self.data:
             name = entry[0]
-            start = self.start + datetime.timedelta(seconds=entry[1])
-            finish = self.start + datetime.timedelta(seconds=entry[2])
+            duration = entry[2]- entry[1]
+            print(entry)
+            print(type(entry[1]))
+            start = self.time_formatter(entry[1])
+            finish = self.time_formatter(entry[2])
             plotly_chart_data.append(dict(Task=name, Start=start, Finish=finish,
-                                          Description=f'Task: {name} Duration: {finish-start} Arrival: {entry[3]}'))
+                                          Description=f'Task: {name} Duration: {duration} Arrival: {entry[3]}'))
         return plotly_chart_data
 
     def process_one_step(self, process, latest_job):

@@ -51,7 +51,7 @@ namer = Namer()
 
 # SIMULATOR
 process_list = ProcessListAdministration()
-process_list.read_csv(filename)
+process_list.read_csv()
 scheduler = Scheduler(process_list)
 
 # Dash
