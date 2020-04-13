@@ -37,13 +37,17 @@ class ProcessListAdministration:
     def read_csv(self, filepath: str):
         """Reads a csv file formatted as 'name, duration, arrival_time' and adds every line as a new process to the
         process list."""
-        file = open(filepath, 'r')
-        file.readline()  # Skip the first row inside csv file.
+
+
+        #file = open(filepath, 'r')
+        #file.readline()  # Skip the first row inside csv file.
+        file = [['a',11,0],['b',17,0],['c',3,0],['x',19,57]]
         for line in file:
-            if not line:
-                break  # if the row is empty, the last row is reached and the for loop is done.
-            line = line.split(',')  # Separate row into its 3 parts, at the comma.
+            #if not line:
+                #break  # if the row is empty, the last row is reached and the for loop is done.
+            #line = line.split(',')  # Separate row into its 3 parts, at the comma.
             if len(line) >= 3:  # Only precede if all the arguments are available.
                 self.processes.append(Process(line[0], int(line[1]), int(line[2])))  # Add as a new process to the list.
 
-        file.close()
+        #file.close()
+

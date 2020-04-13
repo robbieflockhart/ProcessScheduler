@@ -55,8 +55,8 @@ process_list.read_csv(filename)
 scheduler = Scheduler(process_list)
 
 # Dash
-#BS = 'https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/flatly/bootstrap.min.css'
-app = dash.Dash(__name__)
+BS = 'https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/flatly/bootstrap.min.css'
+app = dash.Dash(__name__, external_stylesheets=[BS])
 server = app.server  # This is the Flask app for deploy on Heroku
 
 title = html.Div(
