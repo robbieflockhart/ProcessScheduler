@@ -56,7 +56,7 @@ scheduler = Scheduler(process_list)
 
 # Dash
 BS = 'https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/flatly/bootstrap.min.css'
-app = dash.Dash(__name__,external_stylesheets=[BS])
+app = dash.Dash(__name__)
 server = app.server  # This is the Flask app for deploy on Heroku
 
 title = html.Div(
@@ -438,4 +438,4 @@ def update_modal(is_open):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, threaded=True)
+    app.server.run(debug=True, threaded=True)
