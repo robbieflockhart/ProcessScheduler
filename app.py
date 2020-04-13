@@ -6,11 +6,13 @@ I use it to visualize the outcomes of my Scheduling-Algorithm-Simulator.
 __author__ = "Anton Roesler"
 __email__ = "anton.roesler@stud.fra-uas.de"
 
+import os
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
 import plotly.figure_factory as ff
 import dash_table
+import flask
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
@@ -54,7 +56,8 @@ scheduler = Scheduler(process_list)
 
 # Dash
 BS = 'https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/flatly/bootstrap.min.css'
-app = dash.Dash(external_stylesheets=[BS])
+app = dash.Dash(__name__,external_stylesheets=[BS])
+server = app.server  # This is the Flask app for deploy on Heroku
 
 title = html.Div(
     html.H1(children="Visualization of Scheduling Algorithms", style={'fontSize': 30, 'font-family': 'Gidole'}))
@@ -435,4 +438,4 @@ def update_modal(is_open):
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True, threaded=True)
