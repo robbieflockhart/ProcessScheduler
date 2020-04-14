@@ -171,8 +171,6 @@ class Scheduler:
         for entry in self.data:
             name = entry[0]
             duration = entry[2]- entry[1]
-            print(entry)
-            print(type(entry[1]))
             start = self.time_formatter(entry[1])
             finish = self.time_formatter(entry[2])
             plotly_chart_data.append(dict(Task=name, Start=start, Finish=finish,

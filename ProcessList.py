@@ -34,20 +34,19 @@ class ProcessListAdministration:
             return [Process('null', 1, 0)]  # if the list is completely empty a pseudo process will be returned.
         return deepcopy(self.processes)
 
-    def read_csv(self):
+    def read_csv(self, filepath):
         """Reads a csv file formatted as 'name, duration, arrival_time' and adds every line as a new process to the
         process list."""
 
 
-        #file = open(filepath, 'r')
-        #file.readline()  # Skip the first row inside csv file.
-        file = [['a',11,0],['b',17,0],['c',3,0],['x',19,57]]
+        file = open(filepath, 'r')
+        file.readline()  # Skip the first row inside csv file.
+        #file = [['a',11,0],['b',17,0],['c',3,0],['x',19,57]]
         for line in file:
-            #if not line:
-                #break  # if the row is empty, the last row is reached and the for loop is done.
-            #line = line.split(',')  # Separate row into its 3 parts, at the comma.
+            if not line:
+                break  # if the row is empty, the last row is reached and the for loop is done.
+            line = line.split(',')  # Separate row into its 3 parts, at the comma.
             if len(line) >= 3:  # Only precede if all the arguments are available.
                 self.processes.append(Process(line[0], int(line[1]), int(line[2])))  # Add as a new process to the list.
-
-        #file.close()
+        file.close()
 

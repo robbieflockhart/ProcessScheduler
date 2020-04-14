@@ -51,7 +51,7 @@ namer = Namer()
 
 # SIMULATOR
 process_list = ProcessListAdministration()
-process_list.read_csv()
+process_list.read_csv(filename)
 scheduler = Scheduler(process_list)
 
 # Dash
@@ -196,12 +196,18 @@ def get_comparison():
     c_scheduler.set_quantum(namer.get("quantum"))  # Set quantum for Round Robin to right value before run simulation.
     stats = c_scheduler.run_all()  # Get the stats.
     fig = go.Figure()  # Create a figure
-    fig.add_trace(go.Bar(x=stat_names, y=stats['fcfs'], name="First Come First Served"))
-    fig.add_trace(go.Bar(x=stat_names, y=stats['sjf'], name="Shortest Job First"))
-    fig.add_trace(go.Bar(x=stat_names, y=stats['hrrn'], name="Highest Response Ratio Next"))
-    fig.add_trace(go.Bar(x=stat_names, y=stats['srtf'], name="Shortest Remaining Time First"))
-    fig.add_trace(go.Bar(x=stat_names, y=stats['lrtf'], name="Longest Remaining Time First"))
-    fig.add_trace(go.Bar(x=stat_names, y=stats['rr'], name="Round Robin"))
+    fcfs = [f'{x} - {algorithm_titles[0]}' for x in stats["fcfs"]]
+    sjf = [f'{x} - {algorithm_titles[1]}' for x in stats["sjf"]]
+    hrrn = [f'{x} - {algorithm_titles[2]}' for x in stats["hrrn"]]
+    srtf = [f'{x} - {algorithm_titles[3]}' for x in stats["srtf"]]
+    lrtf = [f'{x} - {algorithm_titles[4]}' for x in stats["lrtf"]]
+    rr = [f'{x} - {algorithm_titles[5]}' for x in stats["rr"]]
+    fig.add_trace(go.Bar(x=stat_names, y=stats['fcfs'], name="First Come First Served", text=fcfs, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['sjf'], name="Shortest Job First", text=sjf, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['hrrn'], name="Highest Response Ratio Next", text=hrrn, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['srtf'], name="Shortest Remaining Time First", text=srtf, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['lrtf'], name="Longest Remaining Time First", text=lrtf, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['rr'], name="Round Robin", text=rr, hoverinfo='text'))
     return fig
 
 
