@@ -330,7 +330,7 @@ def add_button_click(n, num_clicks=num_clicks):
     inside the process list with te input given by the user."""
     if n is None:
         n = 0
-    if n-num_clicks is 0:
+    if n-num_clicks == 0:
         pass
     elif namer.get('name') is None or namer.get('duration') is None or namer.get('arrival') is None:
         pass
@@ -444,4 +444,4 @@ def update_modal(is_open):
 
 
 if __name__ == '__main__':
-    app.server.run(debug=True, threaded=True)
+    app.run_server(debug=True, threaded=True)
