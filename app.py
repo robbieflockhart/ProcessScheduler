@@ -8,10 +8,13 @@ __email__ = "anton.roesler@stud.fra-uas.de"
 
 import os
 import dash
-import dash_html_components as html
-import dash_core_components as dcc
+#import dash_html_components as html
+from dash import html
+#import dash_core_components as dcc
+from dash import dcc
 import plotly.figure_factory as ff
-import dash_table
+#import dash_table
+from dash import dash_table
 import flask
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
