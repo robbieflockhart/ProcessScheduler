@@ -1,6 +1,6 @@
 click
 dash
-dash-bootstrap-components
+dash-bootstrap-components==0.13.1
 dash-core-components
 dash-html-components
 dash-renderer
