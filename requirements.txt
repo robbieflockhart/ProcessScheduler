@@ -20,4 +20,3 @@ pytz
 retrying
 six
 Werkzeug
-python==3.7.0
