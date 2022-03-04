@@ -324,7 +324,7 @@ def update_output(value, x, y, z):
 
 # CALLBACKS FOR THE ADD-A-NEW-PROCESS INPUT FIELD GROUP
 @app.callback(
-    Output("add-button", "test"),  #
+    Output("add-button", "children"),  #
     [Input("add-button", "n_clicks")]
 )
 def add_button_click(n, num_clicks=num_clicks):
@@ -353,7 +353,7 @@ def add_button_click(n, num_clicks=num_clicks):
 # CALLBACKS FOR THE USER INPUTS
 # User inputs will be saved in the Namer!
 @app.callback(
-    Output("name-input", ""),  #
+    Output("name-input", "value"),  #
     [Input("name-input", "value")]
 )
 def update_name(value):
@@ -361,7 +361,7 @@ def update_name(value):
 
 
 @app.callback(
-    Output("duration-input", ""),  #
+    Output("duration-input", "value"),  #
     [Input("duration-input", "value")]
 )
 def update_duration(value):
@@ -369,7 +369,7 @@ def update_duration(value):
 
 
 @app.callback(
-    Output("arrival-input", ""),  #
+    Output("arrival-input", "value"),  #
     [Input("arrival-input", "value")]
 )
 def update_arrival(value):
@@ -377,7 +377,7 @@ def update_arrival(value):
 
 
 @app.callback(
-    Output("clear-button", ""),  #
+    Output("clear-button", "children"),  #
     [Input("clear-button", "n_clicks")]
 )
 def clear_processlist(n):
