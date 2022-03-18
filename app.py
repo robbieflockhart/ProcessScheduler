@@ -30,7 +30,8 @@ algorithm_titles = [
     "Highest Response Ratio Next",
     "Shortest Remaining Time First",
     "Longest Remaining Time First",
-    "Round Robin"
+    "Round Robin",
+    "Evolutionary Algorithm"
 ]
 num_clicks = 0
 quantum = 3  # Used for the Round Robin Algortihm
@@ -106,7 +107,8 @@ dropdown = dcc.Dropdown(
         {'label': algorithm_titles[2], 'value': 2},
         {'label': algorithm_titles[3], 'value': 3},
         {'label': algorithm_titles[4], 'value': 4},
-        {'label': algorithm_titles[5], 'value': 5}
+        {'label': algorithm_titles[5], 'value': 5},
+        {'label': algorithm_titles[6], 'value': 6}
     ],
     style={'fontSize': 19, 'font-family': 'Gidole'},
     searchable=False,
@@ -205,12 +207,14 @@ def get_comparison():
     srtf = [f'{x} - {algorithm_titles[3]}' for x in stats["srtf"]]
     lrtf = [f'{x} - {algorithm_titles[4]}' for x in stats["lrtf"]]
     rr = [f'{x} - {algorithm_titles[5]}' for x in stats["rr"]]
+    ea = [f'{x} - {algorithm_titles[6]}' for x in stats["ea"]]
     fig.add_trace(go.Bar(x=stat_names, y=stats['fcfs'], name="First Come First Served", text=fcfs, hoverinfo='text'))
     fig.add_trace(go.Bar(x=stat_names, y=stats['sjf'], name="Shortest Job First", text=sjf, hoverinfo='text'))
     fig.add_trace(go.Bar(x=stat_names, y=stats['hrrn'], name="Highest Response Ratio Next", text=hrrn, hoverinfo='text'))
     fig.add_trace(go.Bar(x=stat_names, y=stats['srtf'], name="Shortest Remaining Time First", text=srtf, hoverinfo='text'))
     fig.add_trace(go.Bar(x=stat_names, y=stats['lrtf'], name="Longest Remaining Time First", text=lrtf, hoverinfo='text'))
     fig.add_trace(go.Bar(x=stat_names, y=stats['rr'], name="Round Robin", text=rr, hoverinfo='text'))
+    fig.add_trace(go.Bar(x=stat_names, y=stats['ea'], name="Evolutionary Algorithm", text=rr, hoverinfo='text'))
     return fig
 
 
@@ -309,6 +313,9 @@ def update_output(value, x, y, z):
     elif value == 5:
         a_title = algorithm_titles[5]
         scheduler.round_robin()
+    elif value == 6:
+        a_title = algorithm_titles[6]
+        scheduler.ea()
     else:
         a_title = algorithm_titles[0]
         scheduler.non_preemtive_algorithms()

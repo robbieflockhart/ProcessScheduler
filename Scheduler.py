@@ -11,9 +11,20 @@ __author__ = "Anton Roesler"
 __email__ = "anton.roesler@stud.fra-uas.de"
 
 import numpy as np
+from deap.tools import cxOrdered
+
 from ProcessList import ProcessListAdministration
 from Process import Process
 from typing import List
+
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+from deap import algorithms
+from deap import base
+from deap import creator
+from deap import tools
+import random
 
 
 class Scheduler:
@@ -23,6 +34,7 @@ class Scheduler:
         self.passed_time = 0  # Number of time units passed since the simulation's start, only integer values.
         self.data = []  # Data for the diagram
         self.stats = []
+        self.eastats = []
         self.quantum = 3  # Quantum is the length of the time slice for the Round Robin scheduling.
 
         # The start time is considered 0.
@@ -119,6 +131,208 @@ class Scheduler:
             current_job.process(duration, self.passed_time)  # Adjust the parameter inside the job itself.
             already_processed.append(current_job)  # Ad the job to the list of processed ones.
         self.stats = self.get_stats()
+        print("T-----E-----S-----T")
+
+    """
+    """
+
+    def ea(self):
+        """
+        This is the Algorithm for:
+         - First Come First Served
+         - Shortest Job First
+         - Highest Response Ratio Next
+        The Default is set FCFS. SJF or HRRN can be used by setting the sjf or hrrn argument to True.
+        """
+
+        self.reset()
+
+        process_list = self.process_list
+
+        # possible_jobs = self.get_competing_processes()  # All process that are competing to be processed.
+        # possible_jobs.sort(key=lambda x: x.arrival_time)  # Jobs get sorted by arrival time.
+        #
+        def myInitialisationFunction(icls):
+
+            # first create an individual with all bits set to 0
+            random.shuffle(process_list)
+
+            ind = icls(process_list)
+
+            return ind
+
+        for i in range(len(process_list)):
+            # define the fitness class and creare an individual class
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+            creator.create("Individual", list, fitness=creator.FitnessMin)
+
+            # create a toolbox
+            toolbox = base.Toolbox()
+
+            # Attribute generator
+            #toolbox.register("attr_job", random.randint, 0, 1)
+
+            # an individual consists of repeated genes of type "attr_bool"  - we specify 100 genes
+            toolbox.register("individual", myInitialisationFunction, creator.Individual)
+
+            #  a population consist of a list of individuals
+            toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+        def fitnessFunc(individual):
+            waiting_times = []
+            turnaround_times = []
+            endtime = 0
+
+            # waiting_times = [x.get_waiting_time() for x in individual]
+            # turnaround_times = [x.get_turnaround_time() for x in individual]
+            for i in individual:
+                endtime += i.duration
+                waitingTime = endtime - i.arrival_time - i.duration
+
+                if waitingTime < 0:
+                    waitingTime = abs(waitingTime - i.arrival_time)
+                    waiting_times.append(waitingTime)
+                else:
+                    waiting_times.append(waitingTime)
+
+                turnaround_times.append(endtime - i.arrival_time)
+
+            meanWaitingTime = np.mean(waiting_times)
+            medianWaitingTime = np.median(waiting_times)
+            meanTurnaroundTime = np.mean(turnaround_times)
+            medianTurnaroundTime = np.median(turnaround_times)
+
+            return meanWaitingTime,
+
+        def orderedOneXOver(individual1, individual2):
+
+            index1 = random.randint(0, len(individual1) - 1)
+            index2 = random.randint(index1 + 1, len(individual1))
+
+            subParent1 = individual1[index1:index2 + 1]
+            tempList1 = []
+            """
+            for i in individual1:
+                print(i.name)
+            """
+            for i in individual2:
+                if i in subParent1:
+                    pass
+                else:
+                    tempList1.append(i)
+            """
+            for i in subParent1:
+                print(subParent1.name)
+            """
+            child1 = tempList1
+            """
+            for i in child1:
+                print(child1.name)
+            """
+            child1[index1-1:index1-1] = subParent1
+            """
+            for i in child1:
+                print(child1.name)
+            """
+            subParent2 = individual2[index1:index2 + 1]
+            tempList2 = []
+
+            for i in individual1:
+                if i in subParent2:
+                    pass
+                else:
+                    tempList2.append(i)
+
+            child2 = tempList2
+            child2[index1 - 1:index1 - 1] = subParent2
+
+
+            return child1, child2,
+
+        def cx(ind1, ind2):
+            child1, child2 = cxOrdered(ind1, ind2)
+            return child1, child2,
+
+        # register all operators we need with the toolbox
+        toolbox.register("evaluate", fitnessFunc)
+        toolbox.register("mate", orderedOneXOver)
+        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
+        toolbox.register("select", tools.selTournament, tournsize=2)
+
+        def eaMain():
+            # choose a population size: e.g. 200
+            pop = toolbox.population(n=100)
+
+            # keep track of the single best solution found
+            hof = tools.HallOfFame(1)
+
+            # create a statistics object: we can log what ever statistics we want using this. We use the numpy Python library
+            # to calculate the stats and label them with convenient labels
+            stats = tools.Statistics(lambda ind: ind.fitness.values)
+            stats.register("avg", np.mean)
+            stats.register("std", np.std)
+            stats.register("min", np.min)
+            stats.register("max", np.max)
+
+            # run the algorithm: we need to tell it what parameters to use
+            # cxpb = crossover probability; mutpb = mutation probability; ngen = number of iterations
+            pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.05, ngen=200,
+                                           stats=stats, halloffame=hof, verbose=True)
+
+            return pop, log, hof
+
+        ##############################
+        # run the main function
+        pop, log, hof = eaMain()
+
+        ##############################
+
+        best = hof[0].fitness.values[0]  # best fitness found is stored at index 0 in the hof list
+
+        # look in the logbook to see what generation this was found at
+
+        min = log.select("min")  # min fitness per generation stored in log
+
+        for i in range(200):  # set to ngen
+            fit = min[i]
+            if fit == best:
+                break
+
+        print("min fitness found is %s at generation %s" % (best, i))
+
+        process_list = hof[0]
+
+        waiting_times = []
+        turnaround_times = []
+        endtime = 0
+
+        for i in process_list:
+            endtime += i.duration
+            waitingTime = endtime - i.arrival_time - i.duration
+
+            if waitingTime < 0:
+                waitingTime = abs(waitingTime - i.arrival_time)
+                waiting_times.append(waitingTime)
+            else:
+                waiting_times.append(waitingTime)
+
+            turnaround_times.append(endtime - i.arrival_time)
+
+            self.data.append([i.name, endtime - i.duration, endtime, i.arrival_time])
+
+        meanWaitingTime = np.mean(waiting_times)
+        medianWaitingTime = np.median(waiting_times)
+        meanTurnaroundTime = np.mean(turnaround_times)
+        medianTurnaroundTime = np.median(turnaround_times)
+        print(meanWaitingTime)
+        tempStats = [meanWaitingTime, medianWaitingTime, meanTurnaroundTime, medianTurnaroundTime]
+
+        self.stats = tempStats
+        self.eastats = tempStats
+        print(meanWaitingTime)
+
+    """
+    """
 
     # SCHEDULING ALGORITHM SUPPORTING FUNCTIONS
     def get_competing_processes(self) -> List[Process]:
@@ -213,7 +427,6 @@ class Scheduler:
             np.median(turnaround_times)
         ]
 
-
     def run_all(self):
         """Runs every algorithms and returns the stats in a dict for everyone of them."""
         stats = {}
@@ -229,6 +442,8 @@ class Scheduler:
         stats["lrtf"] = self.get_stats()
         self.round_robin()
         stats["rr"] = self.get_stats()
+        self.ea()
+        stats["ea"] = self.eastats
         return stats
 
 
