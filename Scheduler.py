@@ -271,10 +271,6 @@ class Scheduler:
 
             return childIndividual1, childIndividual2,
 
-        def cx(ind1, ind2):
-            child1, child2 = cxOrdered(ind1, ind2)
-            return child1, child2,
-
         # register all operators we need with the toolbox
         toolbox.register("evaluate", fitnessFunc)
         toolbox.register("mate", orderedOneXOver)
