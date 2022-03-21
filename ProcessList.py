@@ -39,7 +39,7 @@ class ProcessListAdministration:
         process list."""
 
 
-        file = open("processes.csv", 'r')
+        file = open("processes2.csv", 'r')
         file.readline()  # Skip the first row inside csv file.
         #file = [['a',11,0],['b',17,0],['c',3,0],['x',19,57]]
         for line in file:

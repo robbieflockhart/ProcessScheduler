@@ -255,8 +255,21 @@ class Scheduler:
             child2 = tempList2
             child2[index1 - 1:index1 - 1] = subParent2
 
+            childIndividual1 = individual1
+            j = 0
+            for i in child1:
+                childIndividual1[j] = i
+                j += 1
 
-            return child1, child2,
+            childIndividual2 = individual2
+            j = 0
+            for i in child2:
+                childIndividual2[j] = i
+                j += 1
+
+            childIndividual1
+
+            return childIndividual1, childIndividual2,
 
         def cx(ind1, ind2):
             child1, child2 = cxOrdered(ind1, ind2)
