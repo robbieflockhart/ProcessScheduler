@@ -214,33 +214,42 @@ class Scheduler:
             """
             for i in individual1:
                 print(i.name)
+            print("")
             """
             for i in individual2:
-                if i in subParent1:
-                    pass
-                else:
+                contains = 0
+                for j in subParent1:
+                    if i.name == j.name:
+                        contains = 1
+                        pass
+                if contains == 0:
                     tempList1.append(i)
             """
             for i in subParent1:
-                print(subParent1.name)
+                print(i.name)
+            print("")
             """
             child1 = tempList1
             """
             for i in child1:
-                print(child1.name)
+                print(i.name)
+            print("")
             """
             child1[index1-1:index1-1] = subParent1
             """
             for i in child1:
-                print(child1.name)
+                print(i.name)
             """
             subParent2 = individual2[index1:index2 + 1]
             tempList2 = []
 
             for i in individual1:
-                if i in subParent2:
-                    pass
-                else:
+                contains = 0
+                for j in subParent2:
+                    if i.name == j.name:
+                        contains = 1
+                        pass
+                if contains == 0:
                     tempList2.append(i)
 
             child2 = tempList2
