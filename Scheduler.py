@@ -25,6 +25,9 @@ from deap import base
 from deap import creator
 from deap import tools
 import random
+from scipy.stats import mannwhitneyu
+from scipy.stats import ttest_ind
+from scipy.stats import shapiro
 
 
 class Scheduler:
@@ -271,15 +274,21 @@ class Scheduler:
 
             return childIndividual1, childIndividual2,
 
+        MUTPB = 1/len(process_list)
+        CXPB = 0.7
+        POPSIZE = 500
+        NGEN = 150
+        TNSIZE = 3
+
         # register all operators we need with the toolbox
         toolbox.register("evaluate", fitnessFunc)
         toolbox.register("mate", orderedOneXOver)
-        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
-        toolbox.register("select", tools.selTournament, tournsize=2)
+        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=MUTPB)
+        toolbox.register("select", tools.selTournament, tournsize=TNSIZE)
 
         def eaMain():
             # choose a population size: e.g. 200
-            pop = toolbox.population(n=100)
+            pop = toolbox.population(n=POPSIZE)
 
             # keep track of the single best solution found
             hof = tools.HallOfFame(1)
@@ -294,8 +303,8 @@ class Scheduler:
 
             # run the algorithm: we need to tell it what parameters to use
             # cxpb = crossover probability; mutpb = mutation probability; ngen = number of iterations
-            pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.05, ngen=200,
-                                           stats=stats, halloffame=hof, verbose=True)
+            pop, log = algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NGEN,
+                                           stats=stats, halloffame=hof, verbose=False)
 
             return pop, log, hof
 
@@ -303,6 +312,81 @@ class Scheduler:
         # run the main function
         pop, log, hof = eaMain()
 
+        # create an dataframe that has 3 columns to record the important data from each run
+        column_names = ['populationSize', 'fitness', 'genMinFound']
+        df = pd.DataFrame(columns=column_names)
+        """
+        for TNSIZE in (2,3,4,5):
+            # repeat EA 10x for each parameter
+            for reps in range(10):
+                pop, log, hof = eaMain()
+                # extract the best fitness
+                best = hof[0].fitness.values[0]
+                # save the generation this fitness was first found
+                min = log.select('min')
+                for gen in range(NGEN):
+                    if min[gen] == best:
+                        break
+        
+                df = df.append({'tounamentSize': POPSIZE, 'fitness': best, 'genMinFound': gen}, ignore_index=True)
+        """
+        """
+        # repeat EA 10x for each parameter
+        for reps in range(10):
+            pop, log, hof = eaMain()
+            # extract the best fitness
+            best = hof[0].fitness.values[0]
+            # save the generation this fitness was first found
+            min = log.select('min')
+            for gen in range(NGEN):
+                if min[gen] == best:
+                    break
+
+            df = df.append({'populationSize': POPSIZE, 'fitness': best, 'genMinFound': gen}, ignore_index=True)
+        
+        stat, p = shapiro(df.fitness)
+        print('normality p=%f' % (p))
+
+        from pathlib import Path
+        filepath = Path('/Users/robbieflockhart/Desktop/out.csv')
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(filepath)
+        """
+        """
+        # code for printing statistics and plots
+        print(df.groupby('populationSize').mean())
+        print(df.groupby('populationSize').median())
+        print(df.groupby('populationSize').std())
+
+        # plot the boxplot of fitness per population size
+        boxplot = df.boxplot(column=['fitness'], by=['populationSize'])
+        plt.show()
+        # plot genMaxFound per population size
+        boxplot = df.boxplot(column=['genMinFound'], by=['populationSize'])
+        plt.show()
+        """
+        """
+        # select two subsets of fitness data, one where popsize = 50 and the other where popsize = 150
+        mp0 = df.fitness[df.popsize == 50]
+        mp1 = df.genMaxFound[df.popsize == 100]
+
+        # we need to convert these subsets to lists to pass to the statistics functions
+        mp0l = mp0.tolist()
+        mp1l = mp1.tolist()
+
+        # check for normality
+        stat, p = shapiro(mp0l)
+        print('normality p=%f' % (p))
+        if p < 0.05:
+            # now apply the  appropriate statistical test depending on the result of the above
+
+            stat,p = mannwhitneyu(mp0l,mp1l)
+
+            print('p=%f' % (p))
+        else:
+            stat, p = ttest_ind(mp0l, mp1l)
+            print('p=%f' % (p))
+        """
         ##############################
 
         best = hof[0].fitness.values[0]  # best fitness found is stored at index 0 in the hof list
@@ -317,7 +401,30 @@ class Scheduler:
                 break
 
         print("min fitness found is %s at generation %s" % (best, i))
+        """
+        # code for plotting
 
+        gen = log.select("gen")
+        fit_max = log.select("max")
+        fit_min = log.select("min")
+        fit_avg = log.select("avg")
+
+        fig, ax1 = plt.subplots()
+        #line1 = ax1.plot(gen, fit_max, "b-", label="max Fitness", color="r")
+        line2 = ax1.plot(gen, fit_min, "b-", label="min Fitness", color="b")
+        #line3 = ax1.plot(gen, fit_avg, "b-", label="avg Fitness", color="g")
+        ax1.set_xlabel("Generations")
+        ax1.set_ylabel("Fitness", color="b")
+        for tl in ax1.get_yticklabels():
+            tl.set_color("b")
+
+        #lns = line1 + line2 + line3
+        lns = line2
+        labs = [l.get_label() for l in lns]
+        ax1.legend(lns, labs, loc="center right")
+
+        plt.show()
+        """
         process_list = hof[0]
 
         waiting_times = []
