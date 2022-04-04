@@ -9,6 +9,12 @@ for the gantt chart. It can be changed to milliseconds, minutes or whatever in l
 
 __author__ = "Anton Roesler"
 __email__ = "anton.roesler@stud.fra-uas.de"
+"""
+Additional Implementation 06/04/22 - evolutionary algorithm scheduling method
+Author - Robbie Flockhart
+Email - 40343879@live.napier.ac.uk
+"""
+
 
 import numpy as np
 from deap.tools import cxOrdered
@@ -134,60 +140,44 @@ class Scheduler:
             current_job.process(duration, self.passed_time)  # Adjust the parameter inside the job itself.
             already_processed.append(current_job)  # Ad the job to the list of processed ones.
         self.stats = self.get_stats()
-        print("T-----E-----S-----T")
 
     """
+    Function for additional scheduling method - evolutionary algorithm
     """
 
     def ea(self):
-        """
-        This is the Algorithm for:
-         - First Come First Served
-         - Shortest Job First
-         - Highest Response Ratio Next
-        The Default is set FCFS. SJF or HRRN can be used by setting the sjf or hrrn argument to True.
-        """
 
         self.reset()
 
         process_list = self.process_list
 
-        # possible_jobs = self.get_competing_processes()  # All process that are competing to be processed.
-        # possible_jobs.sort(key=lambda x: x.arrival_time)  # Jobs get sorted by arrival time.
-        #
-        def myInitialisationFunction(icls):
+        def myInitialisationFunction(icls):  # returns an individual with a list of process in a random order
 
-            # first create an individual with all bits set to 0
             random.shuffle(process_list)
-
             ind = icls(process_list)
 
             return ind
 
         for i in range(len(process_list)):
-            # define the fitness class and creare an individual class
+            # defines the fitness class and create an individual class
             creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
             creator.create("Individual", list, fitness=creator.FitnessMin)
 
-            # create a toolbox
+            # creates a toolbox
             toolbox = base.Toolbox()
 
-            # Attribute generator
-            #toolbox.register("attr_job", random.randint, 0, 1)
-
-            # an individual consists of repeated genes of type "attr_bool"  - we specify 100 genes
+            # an individual consists of a process list
             toolbox.register("individual", myInitialisationFunction, creator.Individual)
 
-            #  a population consist of a list of individuals
+            #  a population consists of a list of individuals
             toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
-        def fitnessFunc(individual):
+        def fitnessFunc(individual):  # calculates the mean difference in preferred start time and actual start time
+            # to evaluate the individual
             waiting_times = []
             turnaround_times = []
             endtime = 0
 
-            # waiting_times = [x.get_waiting_time() for x in individual]
-            # turnaround_times = [x.get_turnaround_time() for x in individual]
             for i in individual:
                 endtime += i.duration
                 waitingTime = endtime - i.arrival_time - i.duration
@@ -207,18 +197,17 @@ class Scheduler:
 
             return meanWaitingTime,
 
-        def orderedOneXOver(individual1, individual2):
+        def orderedOneXOver(individual1, individual2):  # ordered crossover on two parents and returns two offspring
 
+            # get two random indices in the parents
             index1 = random.randint(0, len(individual1) - 1)
             index2 = random.randint(index1 + 1, len(individual1))
 
+            # takes subsection from one parent
             subParent1 = individual1[index1:index2 + 1]
             tempList1 = []
-            """
-            for i in individual1:
-                print(i.name)
-            print("")
-            """
+
+            # loops through the other parent and extracts the genes in order that are not in the previous sub section
             for i in individual2:
                 contains = 0
                 for j in subParent1:
@@ -227,25 +216,17 @@ class Scheduler:
                         pass
                 if contains == 0:
                     tempList1.append(i)
-            """
-            for i in subParent1:
-                print(i.name)
-            print("")
-            """
+
             child1 = tempList1
-            """
-            for i in child1:
-                print(i.name)
-            print("")
-            """
+
+            # inserts the subsection into the correct position of the new offspring
             child1[index1-1:index1-1] = subParent1
-            """
-            for i in child1:
-                print(i.name)
-            """
+
+            # takes subsection from one parent
             subParent2 = individual2[index1:index2 + 1]
             tempList2 = []
 
+            # loops through the other parent and extracts the genes in order that are not in the previous sub section
             for i in individual1:
                 contains = 0
                 for j in subParent2:
@@ -256,8 +237,10 @@ class Scheduler:
                     tempList2.append(i)
 
             child2 = tempList2
+            # inserts the subsection into the correct position of the new offspring
             child2[index1 - 1:index1 - 1] = subParent2
 
+            # swaps the new crossed over process lists with the ol parent lists within the individual objects
             childIndividual1 = individual1
             j = 0
             for i in child1:
@@ -270,95 +253,74 @@ class Scheduler:
                 childIndividual2[j] = i
                 j += 1
 
-            childIndividual1
-
             return childIndividual1, childIndividual2,
 
+        # changeable parameters
         MUTPB = 1/len(process_list)
         CXPB = 0.7
         POPSIZE = 500
         NGEN = 150
         TNSIZE = 3
 
-        # register all operators we need with the toolbox
+        # registers all operators that are need with the toolbox
         toolbox.register("evaluate", fitnessFunc)
         toolbox.register("mate", orderedOneXOver)
         toolbox.register("mutate", tools.mutShuffleIndexes, indpb=MUTPB)
         toolbox.register("select", tools.selTournament, tournsize=TNSIZE)
 
         def eaMain():
-            # choose a population size: e.g. 200
+            # sets population size
             pop = toolbox.population(n=POPSIZE)
 
-            # keep track of the single best solution found
+            # keeps track of the single best solution found
             hof = tools.HallOfFame(1)
 
-            # create a statistics object: we can log what ever statistics we want using this. We use the numpy Python library
-            # to calculate the stats and label them with convenient labels
+            # create a statistics object to calculate  stats
             stats = tools.Statistics(lambda ind: ind.fitness.values)
             stats.register("avg", np.mean)
             stats.register("std", np.std)
             stats.register("min", np.min)
             stats.register("max", np.max)
 
-            # run the algorithm: we need to tell it what parameters to use
-            # cxpb = crossover probability; mutpb = mutation probability; ngen = number of iterations
+            # runs the algorithm with the given parameter values
             pop, log = algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NGEN,
                                            stats=stats, halloffame=hof, verbose=False)
 
             return pop, log, hof
 
         ##############################
-        # run the main function
+        # runs the main function
         pop, log, hof = eaMain()
 
-        # create an dataframe that has 3 columns to record the important data from each run
+        # the following commented block of code was used to carry out statistical significance test on the results of
+        # the algorithm using various parameters and values
+
+        # creates a dataframe to record the important data from each run
         column_names = ['populationSize', 'fitness', 'genMinFound']
         df = pd.DataFrame(columns=column_names)
+
         """
-        for TNSIZE in (2,3,4,5):
-            # repeat EA 10x for each parameter
-            for reps in range(10):
-                pop, log, hof = eaMain()
-                # extract the best fitness
-                best = hof[0].fitness.values[0]
-                # save the generation this fitness was first found
-                min = log.select('min')
-                for gen in range(NGEN):
-                    if min[gen] == best:
-                        break
-        
-                df = df.append({'tounamentSize': POPSIZE, 'fitness': best, 'genMinFound': gen}, ignore_index=True)
-        """
-        """
-        # repeat EA 10x for each parameter
+        # runs the ea 10 times
         for reps in range(10):
             pop, log, hof = eaMain()
-            # extract the best fitness
+            # extracts the best fitness
             best = hof[0].fitness.values[0]
-            # save the generation this fitness was first found
+            # saves the generation this fitness was first found
             min = log.select('min')
             for gen in range(NGEN):
                 if min[gen] == best:
                     break
-
+            #adds the important info to the dataframe
             df = df.append({'populationSize': POPSIZE, 'fitness': best, 'genMinFound': gen}, ignore_index=True)
-        
-        stat, p = shapiro(df.fitness)
-        print('normality p=%f' % (p))
-
-        from pathlib import Path
-        filepath = Path('/Users/robbieflockhart/Desktop/out.csv')
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(filepath)
+            
         """
         """
-        # code for printing statistics and plots
+        # code for printing statistics and boxplots
         print(df.groupby('populationSize').mean())
         print(df.groupby('populationSize').median())
         print(df.groupby('populationSize').std())
 
-        # plot the boxplot of fitness per population size
+        # plot a boxplot of fitness per population size
         boxplot = df.boxplot(column=['fitness'], by=['populationSize'])
         plt.show()
         # plot genMaxFound per population size
@@ -366,22 +328,19 @@ class Scheduler:
         plt.show()
         """
         """
-        # select two subsets of fitness data, one where popsize = 50 and the other where popsize = 150
+        #takes 2 of the datasets from different runs
         mp0 = df.fitness[df.popsize == 50]
         mp1 = df.genMaxFound[df.popsize == 100]
-
-        # we need to convert these subsets to lists to pass to the statistics functions
         mp0l = mp0.tolist()
         mp1l = mp1.tolist()
 
-        # check for normality
+        #normality testing the distribution of the results
         stat, p = shapiro(mp0l)
         print('normality p=%f' % (p))
+        
+        #applies the appropriate statistical test depending on the result of the normality test
         if p < 0.05:
-            # now apply the  appropriate statistical test depending on the result of the above
-
             stat,p = mannwhitneyu(mp0l,mp1l)
-
             print('p=%f' % (p))
         else:
             stat, p = ttest_ind(mp0l, mp1l)
@@ -395,15 +354,16 @@ class Scheduler:
 
         min = log.select("min")  # min fitness per generation stored in log
 
-        for i in range(200):  # set to ngen
+        # finds the generation at which the best fitness was found
+        for i in range(NGEN):
             fit = min[i]
             if fit == best:
                 break
 
         print("min fitness found is %s at generation %s" % (best, i))
-        """
-        # code for plotting
 
+        # the following block of commented code plots the fitness per generation
+        """
         gen = log.select("gen")
         fit_max = log.select("max")
         fit_min = log.select("min")
@@ -431,7 +391,7 @@ class Scheduler:
         turnaround_times = []
         endtime = 0
 
-        for i in process_list:
+        for i in process_list:  # calculates the stats to be displayed within the webapp
             endtime += i.duration
             waitingTime = endtime - i.arrival_time - i.duration
 
